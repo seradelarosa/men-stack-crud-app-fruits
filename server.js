@@ -3,6 +3,8 @@ dotenv.config();
 
 const express = require('express');
 const mongoose = require('mongoose');
+const methodOverride = require('method-override');
+const morgan = require('morgan');
 
 const app = express();
 
@@ -14,8 +16,15 @@ mongoose.connection.on('connected', () => {
 
 const Fruit = require('./models/fruit.js');
 
-//middleware
+//=== middleware ===========================================================
+
 app.use(express.urlencoded({ extended: false }));
+//override using a query value
+app.use(methodOverride('_method'));
+app.use(morgan('dev'));
+
+
+//=== GETS =================================================================
 
 //GET /
 app.get('/', (req, res) => {
@@ -40,6 +49,9 @@ app.get('/fruits/:fruitId', async (req, res) => {
 res.render('fruits/show.ejs', { fruit: foundFruit });
 });
 
+
+//=== POSTs =========================================================
+
 //POST /fruits
 app.post('/fruits', async (req, res) => {
     if (req.body.isReadyToEat === 'on') {
@@ -52,6 +64,20 @@ app.post('/fruits', async (req, res) => {
     res.redirect('/fruits');
 
 });
+
+//=== delete =========================================================
+
+app.delete('/fruits/:fruitId', async (req, res) => {
+    await Fruit.findByIdAndDelete(req.params.fruitId);
+    res.redirect('/fruits');
+});
+
+app.get('/fruits/:fruitId/edit', async (req, res) => {
+    const foundFruit = await Fruit.findById(req.params.fruitId);
+    res.render('fruits/edit.ejs', { fruit: foundFruit });
+});
+
+//=== listen ==========================================================
 
 app.listen(3000, () => {
 console.log('listening on port 3000');
